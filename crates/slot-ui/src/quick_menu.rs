@@ -49,10 +49,11 @@ pub enum QuickRow {
     GbaScaling,
     GbScaling,
     GbcScaling,
+    Scaling,
 }
 
 impl QuickRow {
-    pub const ALL: [QuickRow; 43] = [
+    pub const ALL: [QuickRow; 44] = [
         QuickRow::FastForward,
         QuickRow::FastForwardSound,
         QuickRow::Screen,
@@ -96,6 +97,7 @@ impl QuickRow {
         QuickRow::GbaScaling,
         QuickRow::GbScaling,
         QuickRow::GbcScaling,
+        QuickRow::Scaling,
     ];
 
     pub const MAIN: [QuickRow; 4] = [
@@ -158,10 +160,11 @@ impl QuickRow {
 
     pub const SETTINGS: [QuickRow; 2] = [QuickRow::PlayScreen, QuickRow::PlayGameplay];
 
-    pub const PLAY_SCREEN: [QuickRow; 4] = [
+    pub const PLAY_SCREEN: [QuickRow; 5] = [
         QuickRow::Shader,
         QuickRow::ColourCorrection,
         QuickRow::Palette,
+        QuickRow::Scaling,
         QuickRow::Bezel,
     ];
 
@@ -202,9 +205,11 @@ impl QuickRow {
                 &QuickRow::PLAY
             }
             QuickRow::PlayScreen | QuickRow::PlayGameplay => &QuickRow::SETTINGS,
-            QuickRow::Shader | QuickRow::ColourCorrection | QuickRow::Palette | QuickRow::Bezel => {
-                &QuickRow::PLAY_SCREEN
-            }
+            QuickRow::Shader
+            | QuickRow::ColourCorrection
+            | QuickRow::Palette
+            | QuickRow::Scaling
+            | QuickRow::Bezel => &QuickRow::PLAY_SCREEN,
             _ => &QuickRow::MAIN,
         }
     }
@@ -315,6 +320,7 @@ impl QuickRow {
             QuickRow::GbaScaling => "Scaling",
             QuickRow::GbScaling => "Scaling",
             QuickRow::GbcScaling => "Scaling",
+            QuickRow::Scaling => "Scaling",
         }
     }
 

@@ -327,6 +327,7 @@ fn the_in_game_pages_hold_their_rows_in_order() {
             QuickRow::Shader,
             QuickRow::ColourCorrection,
             QuickRow::Palette,
+            QuickRow::Scaling,
             QuickRow::Bezel
         ]
     );
@@ -387,9 +388,13 @@ fn a_hidden_palette_and_bezel_leave_two_screen_rows() {
     let hidden = [QuickRow::Palette, QuickRow::Bezel];
     assert_eq!(
         QuickRow::Shader.shown(&hidden),
-        vec![QuickRow::Shader, QuickRow::ColourCorrection]
+        vec![
+            QuickRow::Shader,
+            QuickRow::ColourCorrection,
+            QuickRow::Scaling
+        ]
     );
-    assert_eq!(QuickRow::ColourCorrection.down(&hidden), QuickRow::Shader);
+    assert_eq!(QuickRow::Scaling.down(&hidden), QuickRow::Shader);
 }
 
 #[test]
@@ -417,7 +422,7 @@ fn screen_rows_in_game_sit_in_a_panel_at_the_bottom() {
     let colour = slot_ui::quick_row_top(QuickRow::ColourCorrection, &hidden);
     assert_eq!(colour - shader, slot_ui::QUICK_PITCH);
     assert!(
-        shader > slot_ui::OUT_H as f32 / 2.0,
+        shader > slot_ui::OUT_H as f32 / 3.0,
         "the panel starts at {shader}"
     );
     assert!(slot_ui::quick_row_top(QuickRow::FastForward, &[]) < shader);

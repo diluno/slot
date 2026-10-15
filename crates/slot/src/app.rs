@@ -853,13 +853,16 @@ impl App {
             (QuickRow::Bezel, Platform::Gba) => QuickRow::GbaBezel,
             (QuickRow::Bezel, Platform::Gb) => QuickRow::GbBezel,
             (QuickRow::Bezel, Platform::Gbc) => QuickRow::GbcBezel,
+            (QuickRow::Scaling, Platform::Gba) => QuickRow::GbaScaling,
+            (QuickRow::Scaling, Platform::Gb) => QuickRow::GbScaling,
+            (QuickRow::Scaling, Platform::Gbc) => QuickRow::GbcScaling,
             (row, _) => row,
         }
     }
 
     pub fn quick_value(&self, row: QuickRow) -> Option<QuickValue> {
         match row {
-            QuickRow::Shader | QuickRow::ColourCorrection => {
+            QuickRow::Shader | QuickRow::ColourCorrection | QuickRow::Scaling => {
                 self.quick_value(self.playing_row(row))
             }
             QuickRow::GbaScaling => Some(scaling_value(self.state.scaling_gba)),
@@ -2084,6 +2087,7 @@ impl App {
             | QuickRow::GbaScaling
             | QuickRow::GbScaling
             | QuickRow::GbcScaling
+            | QuickRow::Scaling
             | QuickRow::Bezel => {}
         }
     }
@@ -2206,6 +2210,7 @@ impl App {
             | QuickRow::GbBezel
             | QuickRow::GbcBezel
             | QuickRow::GbaBezel
+            | QuickRow::Scaling
             | QuickRow::Bezel => return,
         }
         self.persist();

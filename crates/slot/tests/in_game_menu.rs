@@ -3,7 +3,7 @@ mod common;
 use common::{app_playing_in, tmp_root_with_carts};
 use slot::app::{App, Phase};
 use slot_input::{Action, Btn};
-use slot_store::{Platform, Shader, StateRing};
+use slot_store::{read_slot_state, Platform, Scaling, Shader, StateRing};
 use slot_ui::QuickRow;
 use tempfile::TempDir;
 
@@ -332,4 +332,17 @@ fn exit_game_is_not_offered_with_only_one_cart() {
 fn exit_game_is_offered_with_two_carts() {
     let (_d, a) = playing();
     assert!(!a.in_game_hidden().contains(&QuickRow::ExitGame));
+}
+
+#[test]
+fn scaling_from_the_in_game_menu_fits_the_running_game() {
+    let (d, mut a) = playing();
+    assert_eq!(a.game_fit(), None);
+    go_to(&mut a, QuickRow::Scaling);
+    press(&mut a, Btn::Right);
+    assert_eq!(a.scaling_for(Platform::Gba), Scaling::Integer);
+    assert_eq!(read_slot_state(d.path()).scaling_gba, Scaling::Integer);
+    assert_eq!(a.game_fit(), Some(((240, 160), true)));
+    press(&mut a, Btn::Right);
+    assert_eq!(a.game_fit(), Some(((240, 160), false)));
 }

@@ -91,3 +91,22 @@ fn aspect_fill_spans_the_whole_height_for_game_boy() {
     assert_eq!(at(&frame, 52, 240), [0, 0, 0]);
     assert_ne!(at(&frame, 54, 240), [0, 0, 0]);
 }
+
+#[test]
+fn the_game_behind_the_in_game_menu_is_scaled_the_same_way() {
+    let Some((_g, _s, mut c)) = compositor() else {
+        return;
+    };
+    c.fit((640, 480));
+    c.set_screen_effect(ScreenEffect::None);
+    c.set_screen_power(1.0);
+    c.set_game_fit((160, 144), true);
+    c.begin_frame(Layout::Native);
+    c.upload_game(&pattern());
+    c.draw_list(&[Draw::Game]);
+    let frame = c.read_window((640, 480));
+    assert_eq!(at(&frame, 80, 24), texel(40, 8));
+    assert_eq!(at(&frame, 82, 26), texel(40, 8));
+    assert_eq!(at(&frame, 559, 455), texel(199, 151));
+    assert_eq!(at(&frame, 79, 240), [0, 0, 0]);
+}

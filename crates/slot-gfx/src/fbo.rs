@@ -515,15 +515,26 @@ impl Compositor {
         if !self.native() {
             return draw(self);
         }
-        let (w, h) = canvas_size(self.window);
+        let (x, y, w, h) = match self.fit {
+            Some((picture, integer)) => {
+                let fit = crate::game_fit(self.window, picture, integer);
+                self.game.set_source_rect(fit.source);
+                let (x, y, w, h) = fit.rect;
+                (x as u32, y as u32, w as u32, h as u32)
+            }
+            None => {
+                let (w, h) = canvas_size(self.window);
+                let y = match self.sp_frame {
+                    true => self.size.1 - h,
+                    false => (self.size.1 - h) / 2,
+                };
+                (0, y, w, h)
+            }
+        };
         self.game
             .set_fbo_scale(w as f32 / OUT_W as f32, h as f32 / OUT_H as f32);
-        let y = match self.sp_frame {
-            true => self.size.1 - h,
-            false => (self.size.1 - h) / 2,
-        };
-        self.game.set_origin(0.0, y as f32);
-        unsafe { gl::Viewport(0, y as i32, w as i32, h as i32) };
+        self.game.set_origin(x as f32, y as f32);
+        unsafe { gl::Viewport(x as i32, y as i32, w as i32, h as i32) };
         draw(self);
         self.game.set_origin(0.0, 0.0);
         self.game.set_fbo_scale(
