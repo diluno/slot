@@ -34,9 +34,8 @@ const SLOTS: i32 = 3;
 
 pub const REPEAT_DELAY_MS: Millis = 400;
 
-pub const STAR_SCALE: u32 = 2;
-pub const STAR_INK: [u8; 3] = [0xf6, 0xc3, 0x2c];
-const STAR_INSET: f32 = 5.0;
+pub const STAR_PX: u32 = 34;
+const STAR_INSET: f32 = 1.0;
 const REPEAT_MS: [Millis; 4] = [110, 85, 65, 50];
 
 pub fn repeat_gap(fired: usize) -> Millis {

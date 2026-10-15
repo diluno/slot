@@ -247,3 +247,36 @@ fn centre(px: &[u8], row: usize) -> [u8; 3] {
     let o = (row * OUT_W as usize + (OUT_W / 2) as usize) * 4;
     [px[o], px[o + 1], px[o + 2]]
 }
+
+#[test]
+fn a_starred_cart_wears_a_yellow_sticker_on_its_label() {
+    let Some((_g, _s, mut c)) = compositor() else {
+        eprintln!("no GL on this host, skipping");
+        return;
+    };
+    let d = common::tmp_root_with_carts(&["Emerald", "Fusion", "Minish"]);
+    write_slot_state(
+        d.path(),
+        &SlotState {
+            clock_set: true,
+            favorites: vec![slot_store::Recent {
+                platform: Platform::Gba,
+                stem: "Emerald".into(),
+            }],
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut app = App::boot(d.path());
+    upload_faces(&mut app, &mut c);
+    let star = slot_ui::star_face(slot_ui::STAR_PX);
+    let id = tex(&mut c, star.w, star.h, &star.rgba);
+    app.set_star_face(id, star.w, star.h);
+    let_it_hop(&mut app);
+    let px = shot(&app, &mut c, "starred");
+    let yellow = px
+        .chunks_exact(4)
+        .filter(|p| p[0] > 230 && p[1] > 170 && p[1] < 230 && p[2] < 110)
+        .count();
+    assert!(yellow > 100, "only {yellow} sticker-yellow pixels");
+}

@@ -142,43 +142,46 @@ impl Badge {
     }
 }
 
-const STAR: [&str; 9] = [
-    "....#....",
-    "...###...",
-    "...###...",
-    "#########",
-    ".#######.",
-    "..#####..",
-    "..#####..",
-    ".###.###.",
-    ".##...##.",
-];
+const STAR_TILT_DEG: f32 = -8.0;
+const STAR_OUTER: f32 = 31.0;
+const STAR_INNER: f32 = 14.5;
 
-pub fn star_face(scale: u32, colour: [u8; 3]) -> CartFace {
-    let (gw, gh) = (STAR[0].len() as i32, STAR.len() as i32);
-    let ink = |x: i32, y: i32| {
-        (0..gw).contains(&x)
-            && (0..gh).contains(&y)
-            && STAR[y as usize].as_bytes()[x as usize] == b'#'
-    };
-    let (w, h) = ((gw + 2) as u32 * scale, (gh + 2) as u32 * scale);
-    let mut rgba = vec![0u8; (w * h * 4) as usize];
-    for py in 0..h {
-        for px in 0..w {
-            let (x, y) = ((px / scale) as i32 - 1, (py / scale) as i32 - 1);
-            let rim = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-                .iter()
-                .any(|(dx, dy)| ink(x + dx, y + dy));
-            let c = match (ink(x, y), rim) {
-                (true, _) => [colour[0], colour[1], colour[2], 255],
-                (false, true) => [HALO[0], HALO[1], HALO[2], 255],
-                _ => continue,
-            };
-            let o = ((py * w + px) * 4) as usize;
-            rgba[o..o + 4].copy_from_slice(&c);
-        }
-    }
-    CartFace { rgba, w, h }
+fn star_points() -> String {
+    (0..10)
+        .map(|i| {
+            let r = if i % 2 == 0 { STAR_OUTER } else { STAR_INNER };
+            let a = (i as f32 * 36.0 - 90.0).to_radians();
+            format!("{:.2},{:.2}", 50.0 + r * a.cos(), 52.0 + r * a.sin())
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// A die-cut sticker: yellow star, white border, soft shadow, tilted a little.
+pub fn star_face(px: u32) -> CartFace {
+    let points = star_points();
+    let svg = format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+<linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#ffde5c"/><stop offset="1" stop-color="#f2a91c"/>
+</linearGradient>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+<feGaussianBlur stdDeviation="2.6"/>
+</filter>
+</defs>
+<g transform="rotate({STAR_TILT_DEG} 50 52)">
+<polygon points="{points}" transform="translate(1.5 3.5)" fill="#000" stroke="#000" stroke-width="15" stroke-linejoin="round" opacity="0.32" filter="url(#soft)"/>
+<polygon points="{points}" fill="#d9d4ca" stroke="#d9d4ca" stroke-width="15.5" stroke-linejoin="round"/>
+<polygon points="{points}" fill="#fffdf7" stroke="#fffdf7" stroke-width="14" stroke-linejoin="round"/>
+<polygon points="{points}" fill="url(#ink)" stroke="#e39a12" stroke-width="1.6" stroke-linejoin="round"/>
+<polygon points="{points}" transform="translate(50 52) scale(0.55) translate(-50 -58)" fill="#fff" opacity="0.18"/>
+</g>
+</svg>"##
+    );
+    let rgba =
+        crate::art::render_svg(&svg, px, px).unwrap_or_else(|| vec![0; (px * px * 4) as usize]);
+    CartFace { rgba, w: px, h: px }
 }
 
 pub fn badge_face(badge: Badge, px: f32, colour: [u8; 3]) -> CartFace {

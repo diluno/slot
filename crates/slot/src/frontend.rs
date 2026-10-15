@@ -242,8 +242,8 @@ impl Frontend {
         self.session.app_mut().set_legend_faces(legend);
         let hint = set_clock_hint_face();
         self.clocks.hint = Some(compositor.create_texture(hint.w, hint.h, &hint.rgba));
-        let star = slot_ui::star_face(slot_ui::STAR_SCALE, slot_ui::STAR_INK);
-        let id = compositor.create_texture_nearest(star.w, star.h, &star.rgba);
+        let star = slot_ui::star_face(slot_ui::STAR_PX);
+        let id = compositor.create_texture(star.w, star.h, &star.rgba);
         self.session.app_mut().set_star_face(id, star.w, star.h);
         let shadow = cart_shadow();
         let id = compositor.create_texture(shadow.w, shadow.h, &shadow.rgba);
