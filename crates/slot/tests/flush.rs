@@ -93,9 +93,8 @@ fn opening_the_menu_flushes_and_the_choice_powers_off() {
         "durable before the user has read a single row"
     );
 
-    a.apply(Action::GbaDown(Btn::Down));
     a.apply(Action::GbaDown(Btn::A));
-    assert!(a.powering_off(), "Power Off is the second row");
+    assert!(a.powering_off(), "Power Off is the first row");
     assert_eq!(
         read_slot_state(d.path()).cart,
         Some("Emerald".into()),

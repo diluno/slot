@@ -3,12 +3,12 @@ use crate::text;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum PowerChoice {
-    Restart,
     PowerOff,
+    Restart,
 }
 
 impl PowerChoice {
-    pub const ALL: [PowerChoice; 2] = [PowerChoice::Restart, PowerChoice::PowerOff];
+    pub const ALL: [PowerChoice; 2] = [PowerChoice::PowerOff, PowerChoice::Restart];
 
     pub fn index(self) -> usize {
         self as usize
