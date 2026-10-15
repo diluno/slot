@@ -113,15 +113,15 @@ fn the_rows_run_in_the_order_the_user_chose() {
     );
     assert_eq!(
         QuickRow::SCREEN_GBA.map(QuickRow::label),
-        ["Shader", "Color Correction", "Bezel"]
+        ["Shader", "Color Correction", "Scaling", "Bezel"]
     );
     assert_eq!(
         QuickRow::SCREEN_GBC.map(QuickRow::label),
-        ["Shader", "Color Correction", "Bezel"]
+        ["Shader", "Color Correction", "Scaling", "Bezel"]
     );
     assert_eq!(
         QuickRow::SCREEN_GB.map(QuickRow::label),
-        ["Shader", "Color Correction", "Palettes", "Bezel"]
+        ["Shader", "Color Correction", "Palettes", "Scaling", "Bezel"]
     );
     assert_eq!(
         QuickRow::GAME.map(QuickRow::label),
@@ -212,6 +212,9 @@ fn the_values_read_as_the_menu_prints_them() {
             "25%",
             "45%",
             "65%",
+            "Fit",
+            "Integer",
+            "Aspect Fill",
         ]
     );
     assert_eq!(QuickValue::flag(true), QuickValue::On);

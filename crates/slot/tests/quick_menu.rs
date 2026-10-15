@@ -1,13 +1,13 @@
 mod common;
 
 use common::{
-    app_booting_at, app_booting_with_clock, app_playing_in, tmp_root_with_carts, Clock,
-    CLOCK_IS_SET,
+    app_booting_at, app_booting_with_clock, app_playing_in, app_playing_in_state,
+    tmp_root_with_carts, Clock, CLOCK_IS_SET,
 };
 use slot::app::{App, Phase};
 use slot_input::{Action, Btn};
 use slot_store::{
-    read_slot_state, write_slot_state, Appearance, BezelPick, Platform, Shader, SlotState,
+    read_slot_state, write_slot_state, Appearance, BezelPick, Platform, Scaling, Shader, SlotState,
     WallpaperPick,
 };
 use slot_ui::{
@@ -400,6 +400,7 @@ fn screen_opens_a_page_of_its_own_and_b_comes_back_to_it() {
     for want in [
         QuickRow::GbColourCorrection,
         QuickRow::GbPalettes,
+        QuickRow::GbScaling,
         QuickRow::GbBezel,
         QuickRow::GbShader,
     ] {
@@ -1100,4 +1101,55 @@ fn a_frame_file_that_is_gone_reads_back_as_none() {
         ..SlotState::default()
     });
     assert_eq!(a.resolved_bezel(Platform::Gb), BezelPick::None);
+}
+
+#[test]
+fn scaling_steps_fit_integer_aspect_per_console_and_is_kept() {
+    let (d, mut a, _) = on_carousel();
+    a.set_panel((640, 480));
+    open_at(&mut a, QuickRow::GbaScaling);
+    assert_eq!(a.quick_value(QuickRow::GbaScaling), Some(QuickValue::Fit));
+    for want in [Scaling::Integer, Scaling::Aspect, Scaling::Fit] {
+        press(&mut a, Btn::Right);
+        assert_eq!(a.scaling_for(Platform::Gba), want);
+    }
+    press(&mut a, Btn::Left);
+    assert_eq!(
+        a.quick_value(QuickRow::GbaScaling),
+        Some(QuickValue::Aspect)
+    );
+    assert_eq!(read_slot_state(d.path()).scaling_gba, Scaling::Aspect);
+    assert_eq!(read_slot_state(d.path()).scaling_gb, Scaling::Fit);
+}
+
+#[test]
+fn scaling_other_than_fit_takes_the_ags_102_frame_away() {
+    let (_d, mut a, _) = on_carousel();
+    a.set_panel((640, 480));
+    assert!(a.sp_frame());
+    open_at(&mut a, QuickRow::GbaScaling);
+    press(&mut a, Btn::Right);
+    assert!(!a.sp_frame());
+    assert_eq!(a.resolved_bezel(Platform::Gba), BezelPick::Ags102);
+}
+
+#[test]
+fn the_game_is_fitted_while_it_plays_with_a_canvas_of_its_shape() {
+    let d = tmp_root_with_carts(&["Emerald"]);
+    let state = SlotState {
+        scaling_gba: Scaling::Integer,
+        ..SlotState::default()
+    };
+    let mut a = app_playing_in_state(d.path(), "Emerald", state);
+    a.set_panel((640, 480));
+    assert_eq!(a.game_fit(), Some(((240, 160), true)));
+    assert!(!a.sp_frame());
+    assert_eq!(a.canvas(), slot_gfx::Canvas { w: 720.0, h: 480.0 });
+}
+
+#[test]
+fn fit_leaves_the_game_as_it_was() {
+    let d = tmp_root_with_carts(&["Emerald"]);
+    let a = app_playing_in(d.path(), "Emerald");
+    assert_eq!(a.game_fit(), None);
 }

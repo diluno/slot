@@ -227,6 +227,9 @@ pub struct SlotState {
     pub bezel_gba: BezelPick,
     pub bezel_gb: BezelPick,
     pub bezel_gbc: BezelPick,
+    pub scaling_gba: Scaling,
+    pub scaling_gb: Scaling,
+    pub scaling_gbc: Scaling,
     pub recents: Vec<Recent>,
     pub favorites: Vec<Recent>,
     pub shelf: Option<String>,
@@ -313,6 +316,40 @@ impl Shader {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Scaling {
+    #[default]
+    Fit,
+    Integer,
+    Aspect,
+}
+
+impl Scaling {
+    pub const ALL: [Scaling; 3] = [Scaling::Fit, Scaling::Integer, Scaling::Aspect];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Scaling::Fit => "fit",
+            Scaling::Integer => "integer",
+            Scaling::Aspect => "aspect",
+        }
+    }
+
+    pub fn parse(name: &str) -> Option<Scaling> {
+        Scaling::ALL.into_iter().find(|s| s.name() == name)
+    }
+
+    pub fn step(self, right: bool) -> Scaling {
+        let n = Scaling::ALL.len();
+        let at = Scaling::ALL.iter().position(|&s| s == self).unwrap_or(0);
+        Scaling::ALL[if right {
+            (at + 1) % n
+        } else {
+            (at + n - 1) % n
+        }]
+    }
+}
+
 impl Default for SlotState {
     fn default() -> Self {
         SlotState {
@@ -349,6 +386,9 @@ impl Default for SlotState {
             bezel_gba: BezelPick::Ags102,
             bezel_gb: BezelPick::Ags102,
             bezel_gbc: BezelPick::Ags102,
+            scaling_gba: Scaling::Fit,
+            scaling_gb: Scaling::Fit,
+            scaling_gbc: Scaling::Fit,
             recents: Vec::new(),
             favorites: Vec::new(),
             shelf: None,
@@ -443,6 +483,9 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
     text.push_str(&format!("bezel_gba={}\n", s.bezel_gba.key()));
     text.push_str(&format!("bezel_gb={}\n", s.bezel_gb.key()));
     text.push_str(&format!("bezel_gbc={}\n", s.bezel_gbc.key()));
+    text.push_str(&format!("scaling_gba={}\n", s.scaling_gba.name()));
+    text.push_str(&format!("scaling_gb={}\n", s.scaling_gb.name()));
+    text.push_str(&format!("scaling_gbc={}\n", s.scaling_gbc.name()));
     text.push_str(&format!("shelf={}\n", s.shelf.as_deref().unwrap_or("")));
     text.push_str(&format!(
         "shelf_cart={}\n",
@@ -492,6 +535,9 @@ fn parse(text: &str) -> Option<SlotState> {
     let mut bezel_gba = None;
     let mut bezel_gb = None;
     let mut bezel_gbc = None;
+    let mut scaling_gba = None;
+    let mut scaling_gb = None;
+    let mut scaling_gbc = None;
     let mut shelf = None;
     let mut shelf_cart = None;
     for line in text.lines().filter(|l| !l.is_empty()) {
@@ -531,6 +577,9 @@ fn parse(text: &str) -> Option<SlotState> {
             "bezel_gba" => bezel_gba = Some(BezelPick::parse(value)),
             "bezel_gb" => bezel_gb = Some(BezelPick::parse(value)),
             "bezel_gbc" => bezel_gbc = Some(BezelPick::parse(value)),
+            "scaling_gba" => scaling_gba = Scaling::parse(value),
+            "scaling_gb" => scaling_gb = Scaling::parse(value),
+            "scaling_gbc" => scaling_gbc = Scaling::parse(value),
             "shelf" => shelf = Some(value.to_string()).filter(|v| !v.is_empty()),
             "shelf_cart" => shelf_cart = recent_value(value),
             "shader_gb" => shader_gb = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
@@ -581,6 +630,9 @@ fn parse(text: &str) -> Option<SlotState> {
         bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),
         bezel_gb: bezel_gb.unwrap_or(fallback.bezel_gb),
         bezel_gbc: bezel_gbc.unwrap_or(fallback.bezel_gbc),
+        scaling_gba: scaling_gba.unwrap_or(fallback.scaling_gba),
+        scaling_gb: scaling_gb.unwrap_or(fallback.scaling_gb),
+        scaling_gbc: scaling_gbc.unwrap_or(fallback.scaling_gbc),
         recents: Vec::new(),
         favorites: Vec::new(),
         shelf,

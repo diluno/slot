@@ -506,6 +506,10 @@ impl Frontend {
         compositor.set_overlay_slide(self.session.app().overlay_slide());
         compositor.set_game_source_rect(self.session.app().source_rect());
         self.grab_link_shot(compositor);
+        match self.session.app().game_fit() {
+            Some((picture, integer)) => compositor.set_game_fit(picture, integer),
+            None => compositor.clear_game_fit(),
+        }
         compositor.begin_frame(self.session.app().layout());
         if self.draw_rebuild(compositor) {
             return;

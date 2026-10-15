@@ -1,4 +1,5 @@
 use crate::draw::{Draw, Sprites, TexId};
+use crate::game_fit::GameFit;
 use crate::grade::blue_light_gain;
 use crate::pipeline::GamePass;
 use crate::quad::Quad;
@@ -38,6 +39,7 @@ pub struct Compositor {
     bezel: Option<gl::types::GLuint>,
     game_bezel: Option<TexId>,
     sp_frame: bool,
+    fit: Option<((u32, u32), bool)>,
     turn: Option<Turn>,
 }
 
@@ -106,6 +108,7 @@ impl Compositor {
                 bezel: None,
                 game_bezel: None,
                 sp_frame: true,
+                fit: None,
                 turn: None,
             })
         }
@@ -192,6 +195,26 @@ impl Compositor {
         self.game_bezel = tex;
     }
 
+    pub fn set_game_fit(&mut self, picture: (u32, u32), integer: bool) {
+        self.fit = Some((picture, integer));
+    }
+
+    pub fn clear_game_fit(&mut self) {
+        self.fit = None;
+    }
+
+    fn canvas(&self) -> Canvas {
+        match self.fitted() {
+            Some(fit) => fit.canvas(),
+            None => Canvas::of(self.layout, self.window),
+        }
+    }
+
+    fn fitted(&self) -> Option<GameFit> {
+        let (picture, integer) = self.fit.filter(|_| self.layout == Layout::Framed)?;
+        Some(crate::game_fit(self.window, picture, integer))
+    }
+
     pub fn set_sp_frame(&mut self, on: bool) {
         self.sp_frame = on;
     }
@@ -213,8 +236,7 @@ impl Compositor {
             }],
             &self.quad,
         );
-        self.sprites
-            .set_target(Canvas::of(self.layout, self.window));
+        self.sprites.set_target(self.canvas());
     }
 
     pub fn set_paper(&mut self, size: u32, gray: &[u8]) {
@@ -346,13 +368,16 @@ impl Compositor {
 
     pub fn begin_frame(&mut self, layout: Layout) {
         self.layout = layout;
-        let size = if self.native() {
-            self.window
-        } else {
-            canvas_size(self.window)
+        let size = match (self.native(), self.fitted()) {
+            (true, _) => self.window,
+            (false, Some(fit)) => fit.size(),
+            (false, None) => canvas_size(self.window),
         };
         self.resize(size);
-        self.sprites.set_target(Canvas::of(layout, self.window));
+        self.sprites.set_target(self.canvas());
+        if let Some(fit) = self.fitted() {
+            self.game.set_source_rect(fit.source);
+        }
         self.game.set_fbo_scale(
             self.size.0 as f32 / OUT_W as f32,
             self.size.1 as f32 / OUT_H as f32,
@@ -450,6 +475,12 @@ impl Compositor {
                 window.1 as i32,
                 [0.0, 0.0, 1.0, 1.0],
             );
+            return;
+        }
+        if let Some(fit) = self.fitted() {
+            let (x, y, w, h) = fit.rect;
+            let dx = (self.shake * h as f32 / OUT_H as f32).round() as i32;
+            self.blit_part(x + dx, y, w, h, [0.0, 0.0, 1.0, 1.0]);
             return;
         }
         let framed = crate::bezel::framed(window);

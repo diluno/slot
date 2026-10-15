@@ -597,6 +597,19 @@ pub fn app_playing_with(root: &Path, stem: &str, snapshot: Box<dyn Snapshot>) ->
     )
 }
 
+pub fn app_playing_in_state(root: &Path, stem: &str, state: SlotState) -> App {
+    seated(
+        root,
+        StubSnapshot::boxed(),
+        SlotState {
+            cart: Some(stem.to_string()),
+            clock_set: true,
+            utc_offset_min: 0,
+            ..state
+        },
+    )
+}
+
 fn seated(root: &Path, snapshot: Box<dyn Snapshot>, state: SlotState) -> App {
     write_slot_state(root, &state).expect("write slot.state");
     let mut a = App::boot(root);

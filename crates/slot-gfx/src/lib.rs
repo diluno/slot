@@ -2,6 +2,7 @@ mod bezel;
 mod draw;
 mod fbdev;
 mod fbo;
+mod game_fit;
 mod gl;
 mod grade;
 #[cfg(target_os = "macos")]
@@ -20,6 +21,7 @@ pub use bezel::{framed, lifted_rect, screen_rect};
 pub use draw::{Draw, TexId};
 pub use fbdev::{egl_error, panel_mode, panel_size, FbdevSurface};
 pub use fbo::{canvas_size, Compositor, BACKDROP};
+pub use game_fit::{game_fit, GameFit};
 pub use grade::{blue_light_gain, BLUE_LIGHT_MAX};
 #[cfg(target_os = "macos")]
 pub use headless::HeadlessSurface;

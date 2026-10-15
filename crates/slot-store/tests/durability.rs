@@ -3,7 +3,7 @@ mod common;
 use common::tmp_root;
 use slot_store::{
     atomic_write, read_slot_state, write_slot_state, Appearance, BezelPick, GbPalette, Platform,
-    Recent, Shader, SlotState, WallpaperPick, WallpaperTint, FF_SPEEDS, FF_SPEED_DEFAULT,
+    Recent, Scaling, Shader, SlotState, WallpaperPick, WallpaperTint, FF_SPEEDS, FF_SPEED_DEFAULT,
 };
 use tempfile::tempdir;
 
@@ -221,6 +221,9 @@ fn a_card_from_before_the_settings_keeps_all_its_values() {
             bezel_gba: BezelPick::Ags102,
             bezel_gb: BezelPick::Ags102,
             bezel_gbc: BezelPick::Ags102,
+            scaling_gba: Scaling::Fit,
+            scaling_gb: Scaling::Fit,
+            scaling_gbc: Scaling::Fit,
             recents: Vec::new(),
             favorites: Vec::new(),
             shelf: None,
@@ -253,6 +256,8 @@ fn the_quick_menu_settings_round_trip_as_their_own_lines() {
         bezel_gba: BezelPick::None,
         bezel_gb: BezelPick::Default,
         bezel_gbc: BezelPick::File("Pocket.png".into()),
+        scaling_gba: Scaling::Integer,
+        scaling_gb: Scaling::Aspect,
         shelf: Some("gba".into()),
         shelf_cart: Some(Recent {
             platform: Platform::Gba,

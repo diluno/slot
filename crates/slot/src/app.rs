@@ -8,8 +8,8 @@ use slot_power::{Battery, Charge, LedState, LidPolicy, Power};
 use slot_retro::LinkChannel;
 use slot_store::{
     format_stamp, read_slot_state, scan, write_slot_state, BezelPick, Cart, Core, GbPalette,
-    Platform, Recent, Shader, SlotState, StateEntry, StateRing, WallpaperPick, WallpaperTint,
-    BLUE_LIGHT_MAX, BRIGHTNESS_MAX, FF_SPEEDS, RING_MAX, RUN_AHEAD_MAX, VOLUME_MAX,
+    Platform, Recent, Scaling, Shader, SlotState, StateEntry, StateRing, WallpaperPick,
+    WallpaperTint, BLUE_LIGHT_MAX, BRIGHTNESS_MAX, FF_SPEEDS, RING_MAX, RUN_AHEAD_MAX, VOLUME_MAX,
 };
 use slot_ui::{
     board_from, board_x, board_zoom, draw_empty_slot, draw_footer, draw_ground, draw_slot_name,
@@ -862,6 +862,9 @@ impl App {
             QuickRow::Shader | QuickRow::ColourCorrection => {
                 self.quick_value(self.playing_row(row))
             }
+            QuickRow::GbaScaling => Some(scaling_value(self.state.scaling_gba)),
+            QuickRow::GbScaling => Some(scaling_value(self.state.scaling_gb)),
+            QuickRow::GbcScaling => Some(scaling_value(self.state.scaling_gbc)),
             QuickRow::FastForward => QuickValue::speed(self.state.ff_speed),
             QuickRow::FastForwardSound => Some(QuickValue::flag(self.state.ff_sound)),
             QuickRow::GbaColourCorrection => {
@@ -1001,7 +1004,39 @@ impl App {
     }
 
     pub fn sp_frame(&self) -> bool {
-        self.resolved_bezel(self.playing_platform()) == BezelPick::Ags102
+        self.scaling() == Scaling::Fit
+            && self.resolved_bezel(self.playing_platform()) == BezelPick::Ags102
+    }
+
+    pub fn scaling_for(&self, platform: Platform) -> Scaling {
+        match platform {
+            Platform::Gba => self.state.scaling_gba,
+            Platform::Gb => self.state.scaling_gb,
+            Platform::Gbc => self.state.scaling_gbc,
+        }
+    }
+
+    pub fn scaling(&self) -> Scaling {
+        self.scaling_for(self.playing_platform())
+    }
+
+    pub fn game_fit(&self) -> Option<((u32, u32), bool)> {
+        if !matches!(self.phase, Phase::Playing { .. }) {
+            return None;
+        }
+        let picture = self.playing_platform().picture();
+        match self.scaling() {
+            Scaling::Fit => None,
+            Scaling::Integer => Some((picture, true)),
+            Scaling::Aspect => Some((picture, false)),
+        }
+    }
+
+    fn shown_video_mode(&self) -> VideoMode {
+        match self.scaling() {
+            Scaling::Fit => self.video_mode,
+            _ => VideoMode::Actual,
+        }
     }
 
     pub fn set_game_bezel(&mut self, tex: Option<TexId>) {
@@ -1009,7 +1044,7 @@ impl App {
     }
 
     pub fn shown_game_bezel(&self) -> Option<TexId> {
-        if self.video_mode == VideoMode::Stretch {
+        if self.shown_video_mode() == VideoMode::Stretch || self.scaling() != Scaling::Fit {
             return None;
         }
         self.game_bezel
@@ -1377,7 +1412,7 @@ impl App {
     }
 
     pub fn source_rect(&self) -> [f32; 4] {
-        video_mode::source_rect(self.platform, self.video_mode)
+        video_mode::source_rect(self.platform, self.shown_video_mode())
     }
 
     fn slot_owns_the_shoulders(&self) -> bool {
@@ -2046,6 +2081,9 @@ impl App {
             | QuickRow::GbBezel
             | QuickRow::GbcBezel
             | QuickRow::GbaBezel
+            | QuickRow::GbaScaling
+            | QuickRow::GbScaling
+            | QuickRow::GbcScaling
             | QuickRow::Bezel => {}
         }
     }
@@ -2131,6 +2169,9 @@ impl App {
                 }
                 s.shader_gbc = to;
             }
+            QuickRow::GbaScaling => s.scaling_gba = s.scaling_gba.step(right),
+            QuickRow::GbScaling => s.scaling_gb = s.scaling_gb.step(right),
+            QuickRow::GbcScaling => s.scaling_gbc = s.scaling_gbc.step(right),
             QuickRow::Rumble => s.rumble = !s.rumble,
             QuickRow::EjectSave => s.eject_save = !s.eject_save,
             QuickRow::Turbo => s.turbo = !s.turbo,
@@ -2516,6 +2557,9 @@ impl App {
     }
 
     pub fn canvas(&self) -> Canvas {
+        if let (Layout::Framed, Some((picture, integer))) = (self.layout(), self.game_fit()) {
+            return slot_gfx::game_fit(self.panel, picture, integer).canvas();
+        }
         Canvas::of(self.layout(), self.panel)
     }
 
@@ -4440,6 +4484,14 @@ fn trusted_write(
 
 fn up(level: u8, step: u8, max: u8) -> u8 {
     level.saturating_add(step).min(max)
+}
+
+fn scaling_value(scaling: Scaling) -> QuickValue {
+    match scaling {
+        Scaling::Fit => QuickValue::Fit,
+        Scaling::Integer => QuickValue::Integer,
+        Scaling::Aspect => QuickValue::Aspect,
+    }
 }
 
 fn shader_value(shader: Shader) -> QuickValue {
